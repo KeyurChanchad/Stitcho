@@ -1,4 +1,4 @@
-package com.stitcho
+package com.apexinfocom.stitcho
 
 import android.app.Application
 import com.facebook.react.PackageList

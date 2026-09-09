@@ -1,4 +1,4 @@
-package com.stitcho
+package com.apexinfocom.stitcho
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate

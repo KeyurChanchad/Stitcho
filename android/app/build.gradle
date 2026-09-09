@@ -77,9 +77,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.stitcho"
+    namespace "com.apexinfocom.stitcho"
     defaultConfig {
-        applicationId "com.stitcho"
+        applicationId "com.apexinfocom.stitcho"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
