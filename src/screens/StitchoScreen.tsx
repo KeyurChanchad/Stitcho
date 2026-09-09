@@ -55,12 +55,12 @@ const Storage = {
 };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-type SectionKey = 'pallu' | 'scut' | 'less' | 'blouse';
-const SECTIONS: SectionKey[] = ['pallu', 'scut', 'less', 'blouse'];
+type SectionKey = 'c' | 'pallu' | 'sct' | 'blouse';
+const SECTIONS: SectionKey[] = ['c', 'pallu', 'sct', 'blouse'];
 const SECTION_LABELS: Record<SectionKey, string> = {
+  c: 'C',
   pallu: 'Pallu',
-  scut: 'Scut',
-  less: 'Less',
+  sct: 'Sct',
   blouse: 'Blouse',
 };
 
@@ -90,18 +90,55 @@ function makeEmpty(): FormState {
   return {designName: '', ratePerStitch: '', sections};
 }
 
+function normalizeFormState(raw: any): FormState {
+  const empty = makeEmpty();
+  if (!raw) return empty;
+  const sections = empty.sections;
+  if (raw.sections) {
+    for (const s of SECTIONS) {
+      if (raw.sections[s]) {
+        sections[s] = {
+          head: raw.sections[s].head || '',
+          stich: raw.sections[s].stich || '',
+        };
+      }
+    }
+    // Backward-compatibility: map old 'less' -> 'c', 'scut' -> 'sct'
+    if (raw.sections.less && !sections.c.head && !sections.c.stich) {
+      sections.c = {
+        head: raw.sections.less.head || '',
+        stich: raw.sections.less.stich || '',
+      };
+    }
+    if (raw.sections.scut && !sections.sct.head && !sections.sct.stich) {
+      sections.sct = {
+        head: raw.sections.scut.head || '',
+        stich: raw.sections.scut.stich || '',
+      };
+    }
+  }
+  return {
+    designName: raw.designName || '',
+    ratePerStitch: raw.ratePerStitch || '',
+    sections,
+  };
+}
+
 function compute(form: FormState): ComputedValues {
   const rps = parseFloat(form.ratePerStitch) || 0;
   const totalStich = {} as Record<SectionKey, number>;
   const rate = {} as Record<SectionKey, number>;
   let sareesStitch = 0, sareesRate = 0;
   for (const s of SECTIONS) {
-    const h = parseFloat(form.sections[s].head) || 0;
-    const st = parseFloat(form.sections[s].stich) || 0;
-    totalStich[s] = h * st;
-    rate[s] = (h * st / 1000) * rps;
-    sareesStitch += h * st;
-    sareesRate += rate[s];
+    const sec = form.sections[s] || {head: '', stich: ''};
+    const h = parseFloat(sec.head) || 0;
+    const st = parseFloat(sec.stich) || 0;
+    const ts = h * st;
+    const r = (h * st / 1000) * rps;
+    totalStich[s] = ts;
+    rate[s] = r;
+    sareesStitch += ts;
+    sareesRate += r;
   }
   return {totalStich, rate, sareesStitch, sareesRate};
 }
@@ -119,7 +156,20 @@ function formatDate(iso: string) {
 
 const HISTORY_KEY = 'stitcho_history';
 function loadHistory(): HistoryEntry[] {
-  try { const r = Storage.getItem(HISTORY_KEY); if (r) return JSON.parse(r); } catch (_) {}
+  try {
+    const r = Storage.getItem(HISTORY_KEY);
+    if (r) {
+      const list = JSON.parse(r);
+      return list.map((item: any) => {
+        const form = normalizeFormState(item.form);
+        return {
+          ...item,
+          form,
+          computed: compute(form),
+        };
+      });
+    }
+  } catch (_) {}
   return [];
 }
 function persistHistory(e: HistoryEntry[]) { Storage.setItem(HISTORY_KEY, JSON.stringify(e)); }
@@ -390,7 +440,7 @@ export default function StitchoScreen() {
   }, [form, computed]);
 
   const selectHistory = useCallback((entry: HistoryEntry) => {
-    setForm({...entry.form}); setEditingId(entry.id); setHistoryVisible(false);
+    setForm(normalizeFormState(entry.form)); setEditingId(entry.id); setHistoryVisible(false);
   }, []);
 
   const deleteHistory = useCallback((id: string) => {
