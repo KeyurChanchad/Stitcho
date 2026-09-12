@@ -18,6 +18,7 @@ interface ProfileModalProps {
   user: UserProfile | null;
   onClose: () => void;
   onSignOut: () => void;
+  onCheckUpdate?: () => void;
 }
 
 export default function ProfileModal({
@@ -25,6 +26,7 @@ export default function ProfileModal({
   user,
   onClose,
   onSignOut,
+  onCheckUpdate,
 }: ProfileModalProps) {
   const insets = useSafeAreaInsets();
 
@@ -167,6 +169,36 @@ export default function ProfileModal({
                     <Text style={styles.profileInfoValue}>Saved Locally</Text>
                   </View>
                 </View>
+
+                {onCheckUpdate && (
+                  <>
+                    <View style={styles.profileInfoDivider} />
+
+                    <TouchableOpacity
+                      style={styles.profileInfoRow}
+                      onPress={onCheckUpdate}
+                      activeOpacity={0.7}>
+                      <Icon
+                        name="system-update"
+                        size={18}
+                        color={Colors.accent}
+                        style={styles.profileInfoIcon}
+                      />
+                      <View style={styles.profileInfoTextWrap}>
+                        <Text style={styles.profileInfoLabel}>App Version</Text>
+                        <Text style={styles.profileInfoValue}>v1.0.0</Text>
+                      </View>
+                      <View style={styles.checkUpdatePill}>
+                        <Text style={styles.checkUpdatePillText}>Check</Text>
+                        <Icon
+                          name="chevron-right"
+                          size={16}
+                          color={Colors.accent}
+                        />
+                      </View>
+                    </TouchableOpacity>
+                  </>
+                )}
               </View>
 
               {/* Sign Out Button */}
@@ -352,6 +384,20 @@ const styles = StyleSheet.create({
   profileInfoDivider: {
     height: 1,
     backgroundColor: Colors.border,
+  },
+  checkUpdatePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.computedBg,
+    paddingHorizontal: Spacing[2],
+    paddingVertical: 3,
+    borderRadius: Radius.full,
+    gap: 2,
+  },
+  checkUpdatePillText: {
+    fontFamily: FontFamily.semiBold,
+    fontSize: FontSize.xs,
+    color: Colors.accent,
   },
   signOutBtn: {
     width: '100%',

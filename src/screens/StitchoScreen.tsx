@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useState} from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   Image,
@@ -14,7 +14,7 @@ import {
   View,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Types
 import {
@@ -28,7 +28,12 @@ import {
 } from '../types';
 
 // Services
-import {compute, fmt, makeEmpty, normalizeFormState} from '../services/calculation';
+import {
+  compute,
+  fmt,
+  makeEmpty,
+  normalizeFormState,
+} from '../services/calculation';
 import {
   loadHistory,
   loadUserProfile,
@@ -41,13 +46,15 @@ import {
   signInWithGoogle,
   signOutGoogle,
 } from '../services/auth';
-import {generateAndSharePDF} from '../services/pdf';
+import { generateAndSharePDF } from '../services/pdf';
+import { checkForUpdate, openAppStore, UpdateInfo } from '../services/update';
 
 // Components & Sub-screens
 import GridRow from '../components/GridRow';
 import SummaryRow from '../components/SummaryRow';
 import HistoryModal from '../components/HistoryModal';
 import ProfileModal from '../components/ProfileModal';
+import UpdateModal from '../components/UpdateModal';
 import SplashScreen from './SplashScreen';
 import LoginScreen from './LoginScreen';
 
@@ -73,10 +80,20 @@ export default function StitchoScreen() {
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [profileVisible, setProfileVisible] = useState(false);
   const [isSigningIn, setIsSigningIn] = useState(false);
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
+  const [updateModalVisible, setUpdateModalVisible] = useState(false);
 
   useEffect(() => {
     initGoogleSignIn();
     setHistory(loadHistory());
+
+    // Check for app updates in the background on launch
+    checkForUpdate().then(info => {
+      if (info && info.updateAvailable) {
+        setUpdateInfo(info);
+        setUpdateModalVisible(true);
+      }
+    });
 
     const savedUser = loadUserProfile();
     if (savedUser) {
@@ -102,7 +119,7 @@ export default function StitchoScreen() {
     (s: SectionKey, f: keyof SectionValues, v: string) => {
       setForm(p => ({
         ...p,
-        sections: {...p.sections, [s]: {...p.sections[s], [f]: v}},
+        sections: { ...p.sections, [s]: { ...p.sections[s], [f]: v } },
       }));
     },
     [],
@@ -118,7 +135,8 @@ export default function StitchoScreen() {
 
     // Check if design already exists in history (case-insensitive)
     const existingEntry = history.find(
-      h => h.form.designName.trim().toLowerCase() === trimmedDesign.toLowerCase(),
+      h =>
+        h.form.designName.trim().toLowerCase() === trimmedDesign.toLowerCase(),
     );
 
     const targetId = editingId || existingEntry?.id;
@@ -129,7 +147,7 @@ export default function StitchoScreen() {
           ? {
               ...h,
               savedAt: now,
-              form: {...form, designName: trimmedDesign},
+              form: { ...form, designName: trimmedDesign },
               computed,
             }
           : h,
@@ -147,7 +165,7 @@ export default function StitchoScreen() {
       const entry: HistoryEntry = {
         id: `${Date.now()}`,
         savedAt: now,
-        form: {...form, designName: trimmedDesign},
+        form: { ...form, designName: trimmedDesign },
         computed,
       };
       const updated = [entry, ...history];
@@ -166,7 +184,10 @@ export default function StitchoScreen() {
   const handleWhatsApp = useCallback(async () => {
     Keyboard.dismiss();
     if (!form.designName.trim()) {
-      Alert.alert('Required', 'Please enter a Design No / Name before sharing.');
+      Alert.alert(
+        'Required',
+        'Please enter a Design No / Name before sharing.',
+      );
       return;
     }
     setSharing(true);
@@ -184,8 +205,12 @@ export default function StitchoScreen() {
       if (res.type === 'success') {
         setUser(res.user);
         persistUserProfile(res.user);
-        Alert.alert('Signed In', `Welcome, ${res.user.name || res.user.email}!`);
+        Alert.alert(
+          'Signed In',
+          `Welcome, ${res.user.name || res.user.email}!`,
+        );
       } else if (res.type === 'error') {
+        console.log(res);
         Alert.alert('Sign In Error', res.message);
       }
     } finally {
@@ -195,7 +220,7 @@ export default function StitchoScreen() {
 
   const handleGoogleSignOut = useCallback(() => {
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-      {text: 'Cancel', style: 'cancel'},
+      { text: 'Cancel', style: 'cancel' },
       {
         text: 'Sign Out',
         style: 'destructive',
@@ -219,7 +244,7 @@ export default function StitchoScreen() {
   const deleteHistory = useCallback(
     (id: string) => {
       Alert.alert('Delete Record', 'Remove this entry from history?', [
-        {text: 'Cancel', style: 'cancel'},
+        { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
           style: 'destructive',
@@ -237,6 +262,21 @@ export default function StitchoScreen() {
     [history, editingId],
   );
 
+  const handleManualUpdateCheck = useCallback(async () => {
+    const info = await checkForUpdate();
+    if (info && info.updateAvailable) {
+      setProfileVisible(false);
+      setUpdateInfo(info);
+      setUpdateModalVisible(true);
+    } else {
+      Alert.alert(
+        'Up to Date',
+        'You are already using the latest version of Stitcho.',
+        [{ text: 'OK' }],
+      );
+    }
+  }, []);
+
   // Splash Screen while verifying auth
   if (isAuthChecking) {
     return <SplashScreen />;
@@ -245,15 +285,12 @@ export default function StitchoScreen() {
   // Mandatory Login Gate
   if (!user) {
     return (
-      <LoginScreen
-        onSignIn={handleGoogleSignIn}
-        isSigningIn={isSigningIn}
-      />
+      <LoginScreen onSignIn={handleGoogleSignIn} isSigningIn={isSigningIn} />
     );
   }
 
   return (
-    <View style={[S.root, {paddingTop: insets.top}]}>
+    <View style={[S.root, { paddingTop: insets.top }]}>
       <StatusBar backgroundColor={Colors.dark} barStyle="light-content" />
 
       {/* ── Header ── */}
@@ -282,7 +319,8 @@ export default function StitchoScreen() {
           <TouchableOpacity
             style={S.historyPill}
             onPress={() => setHistoryVisible(true)}
-            activeOpacity={0.8}>
+            activeOpacity={0.8}
+          >
             <Icon name="history" size={16} color={Colors.primary} />
             <Text style={S.historyPillText}> {history.length}</Text>
           </TouchableOpacity>
@@ -290,9 +328,10 @@ export default function StitchoScreen() {
           <TouchableOpacity
             style={S.profileHeaderBtn}
             onPress={() => setProfileVisible(true)}
-            activeOpacity={0.8}>
+            activeOpacity={0.8}
+          >
             {user.photo ? (
-              <Image source={{uri: user.photo}} style={S.headerAvatar} />
+              <Image source={{ uri: user.photo }} style={S.headerAvatar} />
             ) : (
               <View style={[S.headerAvatarFallback, S.headerAvatarActive]}>
                 <Icon name="person" size={20} color={Colors.dark} />
@@ -304,20 +343,23 @@ export default function StitchoScreen() {
 
       <KeyboardAvoidingView
         style={CommonStyles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
         <ScrollView
           style={CommonStyles.flex}
           contentContainerStyle={S.scrollContent}
-          keyboardShouldPersistTaps="handled">
+          keyboardShouldPersistTaps="handled"
+        >
           {/* ── Profile Status Banner ── */}
           <TouchableOpacity
             style={S.profileBanner}
             onPress={() => setProfileVisible(true)}
-            activeOpacity={0.85}>
+            activeOpacity={0.85}
+          >
             <View style={S.profileBannerLeft}>
               {user.photo ? (
                 <Image
-                  source={{uri: user.photo}}
+                  source={{ uri: user.photo }}
                   style={S.profileBannerAvatar}
                 />
               ) : (
@@ -355,7 +397,7 @@ export default function StitchoScreen() {
                 placeholder="Enter Design No / Name"
                 placeholderTextColor={Colors.textMuted}
                 value={form.designName}
-                onChangeText={v => setForm(f => ({...f, designName: v}))}
+                onChangeText={v => setForm(f => ({ ...f, designName: v }))}
               />
               <Icon name="edit" size={18} color={Colors.textMuted} />
             </View>
@@ -413,13 +455,11 @@ export default function StitchoScreen() {
                 placeholder="0.00"
                 placeholderTextColor={Colors.textMuted}
                 value={form.ratePerStitch}
-                onChangeText={v => setForm(f => ({...f, ratePerStitch: v}))}
+                onChangeText={v => setForm(f => ({ ...f, ratePerStitch: v }))}
               />
             </SummaryRow>
             <View style={S.summaryDivider} />
-            <SummaryRow
-              label="Sarees Stitch"
-              iconName="format-list-numbered">
+            <SummaryRow label="Sarees Stitch" iconName="format-list-numbered">
               <View style={S.summaryValueBox}>
                 <Text style={S.summaryValue}>
                   {fmt(computed.sareesStitch, 0)}
@@ -439,14 +479,16 @@ export default function StitchoScreen() {
             <TouchableOpacity
               style={[S.btn, S.btnSave]}
               onPress={handleSave}
-              activeOpacity={0.82}>
+              activeOpacity={0.82}
+            >
               <Icon name={editingId ? 'sync' : 'save'} size={20} color="#fff" />
               <Text style={S.btnLabel}>{editingId ? 'Update' : 'Save'}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[S.btn, S.btnCalc]}
               onPress={() => Keyboard.dismiss()}
-              activeOpacity={0.82}>
+              activeOpacity={0.82}
+            >
               <Icon name="calculate" size={20} color="#fff" />
               <Text style={S.btnLabel}>Calculate</Text>
             </TouchableOpacity>
@@ -457,7 +499,8 @@ export default function StitchoScreen() {
             style={[S.btn, S.btnWhatsApp, sharing && S.btnDisabled]}
             onPress={handleWhatsApp}
             activeOpacity={0.82}
-            disabled={sharing}>
+            disabled={sharing}
+          >
             <Icon name="share" size={20} color="#fff" />
             <Text style={S.btnLabel}>
               {sharing ? 'Generating PDF…' : 'Share on WhatsApp'}
@@ -468,12 +511,13 @@ export default function StitchoScreen() {
           <TouchableOpacity
             style={[S.btn, S.btnClear]}
             onPress={handleClear}
-            activeOpacity={0.82}>
+            activeOpacity={0.82}
+          >
             <Icon name="cleaning-services" size={20} color="#fff" />
             <Text style={S.btnLabel}>Clear All</Text>
           </TouchableOpacity>
 
-          <View style={{height: insets.bottom + 24}} />
+          <View style={{ height: insets.bottom + 24 }} />
         </ScrollView>
       </KeyboardAvoidingView>
 
@@ -491,13 +535,25 @@ export default function StitchoScreen() {
         user={user}
         onClose={() => setProfileVisible(false)}
         onSignOut={handleGoogleSignOut}
+        onCheckUpdate={handleManualUpdateCheck}
+      />
+
+      <UpdateModal
+        visible={updateModalVisible}
+        updateInfo={updateInfo}
+        onDismiss={() => setUpdateModalVisible(false)}
+        onUpdate={() => {
+          if (updateInfo) {
+            openAppStore(updateInfo.storeUrl);
+          }
+        }}
       />
     </View>
   );
 }
 
 const S = StyleSheet.create({
-  root: {flex: 1, backgroundColor: Colors.background},
+  root: { flex: 1, backgroundColor: Colors.background },
 
   header: {
     backgroundColor: Colors.dark,
@@ -508,15 +564,15 @@ const S = StyleSheet.create({
     paddingVertical: Spacing[3],
     ...Shadow.md,
   },
-  headerLeft: {flexDirection: 'row', alignItems: 'center', flex: 1},
-  headerIcon: {marginRight: Spacing[2]},
+  headerLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  headerIcon: { marginRight: Spacing[2] },
   headerTitle: {
     fontFamily: FontFamily.bold,
     fontSize: FontSize.xl,
     color: Colors.textLight,
     letterSpacing: 0.2,
   },
-  editingChipRow: {flexDirection: 'row', alignItems: 'center', marginTop: 2},
+  editingChipRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
   editingChip: {
     fontFamily: FontFamily.medium,
     fontSize: FontSize.xs,
@@ -575,7 +631,7 @@ const S = StyleSheet.create({
     height: 24,
   },
 
-  scrollContent: {padding: Spacing[3], gap: Spacing[3]},
+  scrollContent: { padding: Spacing[3], gap: Spacing[3] },
 
   profileBanner: {
     flexDirection: 'row',
@@ -610,7 +666,7 @@ const S = StyleSheet.create({
     justifyContent: 'center',
     marginRight: Spacing[3],
   },
-  profileBannerTextWrap: {flex: 1},
+  profileBannerTextWrap: { flex: 1 },
   profileBannerName: {
     fontFamily: FontFamily.bold,
     fontSize: FontSize.base,
@@ -663,7 +719,7 @@ const S = StyleSheet.create({
     backgroundColor: Colors.background,
     paddingHorizontal: Spacing[3],
   },
-  designIcon: {marginRight: Spacing[2]},
+  designIcon: { marginRight: Spacing[2] },
   designInput: {
     flex: 1,
     fontFamily: FontFamily.medium,
@@ -678,8 +734,17 @@ const S = StyleSheet.create({
     borderBottomColor: Colors.border,
     paddingVertical: Spacing[1],
   },
-  fieldLabelCell: {flex: 1.4, justifyContent: 'center', paddingRight: Spacing[1]},
-  dataCell: {flex: 1, paddingHorizontal: 3, alignItems: 'center', justifyContent: 'center'},
+  fieldLabelCell: {
+    flex: 1.4,
+    justifyContent: 'center',
+    paddingRight: Spacing[1],
+  },
+  dataCell: {
+    flex: 1,
+    paddingHorizontal: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   colHeader: {
     fontFamily: FontFamily.semiBold,
     fontSize: FontSize.xs,
@@ -690,7 +755,7 @@ const S = StyleSheet.create({
     letterSpacing: 0.6,
   },
 
-  summaryDivider: {height: 1, backgroundColor: Colors.border},
+  summaryDivider: { height: 1, backgroundColor: Colors.border },
   summaryValueBox: {
     flex: 1.1,
     borderWidth: 1.5,
@@ -714,14 +779,14 @@ const S = StyleSheet.create({
     color: Colors.accent,
     textAlign: 'right',
   },
-  totalBox: {borderColor: Colors.primary, backgroundColor: Colors.computedBg},
+  totalBox: { borderColor: Colors.primary, backgroundColor: Colors.computedBg },
   totalValue: {
     fontFamily: FontFamily.bold,
     fontSize: FontSize.lg,
     color: Colors.accent,
   },
 
-  btnRow: {flexDirection: 'row', gap: Spacing[2]},
+  btnRow: { flexDirection: 'row', gap: Spacing[2] },
   btn: {
     flex: 1,
     flexDirection: 'row',
@@ -732,11 +797,11 @@ const S = StyleSheet.create({
     paddingVertical: Spacing[3] + 2,
     ...Shadow.sm,
   },
-  btnSave: {backgroundColor: Colors.dark},
-  btnCalc: {backgroundColor: Colors.secondary},
-  btnWhatsApp: {backgroundColor: '#25D366', flex: 1},
-  btnClear: {backgroundColor: Colors.error},
-  btnDisabled: {opacity: 0.6},
+  btnSave: { backgroundColor: Colors.dark },
+  btnCalc: { backgroundColor: Colors.secondary },
+  btnWhatsApp: { backgroundColor: '#25D366', flex: 1 },
+  btnClear: { backgroundColor: Colors.error },
+  btnDisabled: { opacity: 0.6 },
   btnLabel: {
     fontFamily: FontFamily.semiBold,
     fontSize: FontSize.base,
