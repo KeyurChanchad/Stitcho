@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "25327367994",
+    "project_id": "stitcho-1b3d9",
+    "storage_bucket": "stitcho-1b3d9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:25327367994:android:1e925343112ec8313c4203",
+        "android_client_info": {
+          "package_name": "com.apexinfocom.stitcho"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyArsN0P9Ghn9T0EWfWylbU65SX3S2_hG_4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
