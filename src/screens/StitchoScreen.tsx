@@ -48,6 +48,8 @@ import {
 } from '../services/auth';
 import { generateAndSharePDF } from '../services/pdf';
 import { checkForUpdate, openAppStore, UpdateInfo } from '../services/update';
+import { showToast } from '../services/toast';
+import { initAds, showInterstitialIfNeeded } from '../services/ads';
 
 // Components & Sub-screens
 import GridRow from '../components/GridRow';
@@ -55,6 +57,7 @@ import SummaryRow from '../components/SummaryRow';
 import HistoryModal from '../components/HistoryModal';
 import ProfileModal from '../components/ProfileModal';
 import UpdateModal from '../components/UpdateModal';
+import BannerAdView from '../components/BannerAdView';
 import SplashScreen from './SplashScreen';
 import LoginScreen from './LoginScreen';
 
@@ -85,6 +88,7 @@ export default function StitchoScreen() {
 
   useEffect(() => {
     initGoogleSignIn();
+    initAds();
     setHistory(loadHistory());
 
     // Check for app updates in the background on launch
@@ -128,7 +132,7 @@ export default function StitchoScreen() {
   const handleSave = useCallback(() => {
     const trimmedDesign = form.designName.trim();
     if (!trimmedDesign) {
-      Alert.alert('Required', 'Please enter a Design No / Name.');
+      showToast('error', 'Required', 'Please enter a Design No / Name.');
       return;
     }
     const now = new Date().toISOString();
@@ -155,12 +159,11 @@ export default function StitchoScreen() {
       setHistory(updated);
       persistHistory(updated);
       setEditingId(targetId);
-      Alert.alert(
-        'Updated',
-        existingEntry && !editingId
-          ? `Design "${trimmedDesign}" already exists in history. Record has been updated.`
-          : 'Record updated in history.',
-      );
+      
+      const msg = existingEntry && !editingId
+        ? `Design "${trimmedDesign}" already exists in history. Record has been updated.`
+        : 'Record updated in history.';
+      showToast('success', 'Updated', msg);
     } else {
       const entry: HistoryEntry = {
         id: `${Date.now()}`,
@@ -172,8 +175,11 @@ export default function StitchoScreen() {
       setHistory(updated);
       persistHistory(updated);
       setEditingId(entry.id);
-      Alert.alert('Saved', 'Record saved to history.');
+      showToast('success', 'Saved', 'Record saved to history.');
     }
+    
+    // Show Ad if needed after save
+    showInterstitialIfNeeded();
   }, [form, computed, history, editingId]);
 
   const handleClear = useCallback(() => {
@@ -184,10 +190,7 @@ export default function StitchoScreen() {
   const handleWhatsApp = useCallback(async () => {
     Keyboard.dismiss();
     if (!form.designName.trim()) {
-      Alert.alert(
-        'Required',
-        'Please enter a Design No / Name before sharing.',
-      );
+      showToast('error', 'Required', 'Please enter a Design No / Name before sharing.');
       return;
     }
     setSharing(true);
@@ -205,13 +208,10 @@ export default function StitchoScreen() {
       if (res.type === 'success') {
         setUser(res.user);
         persistUserProfile(res.user);
-        Alert.alert(
-          'Signed In',
-          `Welcome, ${res.user.name || res.user.email}!`,
-        );
+        showToast('success', 'Signed In', `Welcome, ${res.user.name || res.user.email}!`);
       } else if (res.type === 'error') {
         console.log(res);
-        Alert.alert('Sign In Error', res.message);
+        showToast('error', 'Sign In Error', res.message);
       }
     } finally {
       setIsSigningIn(false);
@@ -229,7 +229,7 @@ export default function StitchoScreen() {
           setProfileVisible(false);
           setUser(null);
           persistUserProfile(null);
-          Alert.alert('Signed Out', 'You have been signed out.');
+          showToast('success', 'Signed Out', 'You have been signed out.');
         },
       },
     ]);
@@ -269,11 +269,7 @@ export default function StitchoScreen() {
       setUpdateInfo(info);
       setUpdateModalVisible(true);
     } else {
-      Alert.alert(
-        'Up to Date',
-        'You are already using the latest version of Stitcho.',
-        [{ text: 'OK' }],
-      );
+      showToast('info', 'Up to Date', 'You are already using the latest version of Stitcho.');
     }
   }, []);
 
@@ -520,6 +516,9 @@ export default function StitchoScreen() {
           <View style={{ height: insets.bottom + 24 }} />
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Banner Ad anchored at bottom */}
+      <BannerAdView />
 
       {/* Modals */}
       <HistoryModal

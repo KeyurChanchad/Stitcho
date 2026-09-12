@@ -1,4 +1,4 @@
-import {Alert} from 'react-native';
+import {showToast} from './toast';
 import {generatePDF} from 'react-native-html-to-pdf';
 import Share, {Social} from 'react-native-share';
 import {ComputedValues, FormState, SECTIONS, SECTION_LABELS} from '../types';
@@ -227,9 +227,6 @@ export async function generateAndSharePDF(
     ) {
       return;
     }
-    Alert.alert(
-      'Share Failed',
-      err?.message || 'Could not share PDF. Please try again.',
-    );
+    showToast('error', 'Share Failed', err?.message || 'Could not share PDF. Please try again.');
   }
 }

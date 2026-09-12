@@ -1,4 +1,5 @@
-import {Alert, Linking, Platform} from 'react-native';
+import {Linking, Platform} from 'react-native';
+import {showToast} from './toast';
 
 export const APP_PACKAGE_NAME = 'com.apexinfocom.stitcho';
 export const CURRENT_APP_VERSION = '1.0.0';
@@ -170,11 +171,10 @@ export async function openAppStore(storeUrl?: string): Promise<void> {
     try {
       await Linking.openURL(fallbackUrl);
     } catch {
-      Alert.alert(
+      showToast(
+        'error',
         'Unable to open store',
-        `Please open ${
-          Platform.OS === 'ios' ? 'App Store' : 'Play Store'
-        } and search for "Stitcho".`,
+        `Please open ${Platform.OS === 'ios' ? 'App Store' : 'Play Store'} and search for "Stitcho".`
       );
     }
   }
