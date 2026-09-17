@@ -1,4 +1,4 @@
-import {HistoryEntry, UserProfile} from '../types';
+import {HistoryEntry} from '../types';
 import {compute, normalizeFormState} from './calculation';
 
 // ─── Local Storage shim ───────────────────────────────────────────────────────
@@ -30,27 +30,6 @@ export const Storage = {
     writeStore(s);
   },
 };
-
-// ─── User Profile Storage ─────────────────────────────────────────────────────
-const USER_PROFILE_KEY = 'stitcho_user_profile';
-
-export function loadUserProfile(): UserProfile | null {
-  try {
-    const r = Storage.getItem(USER_PROFILE_KEY);
-    if (r) {
-      return JSON.parse(r);
-    }
-  } catch {}
-  return null;
-}
-
-export function persistUserProfile(user: UserProfile | null) {
-  if (user) {
-    Storage.setItem(USER_PROFILE_KEY, JSON.stringify(user));
-  } else {
-    Storage.removeItem(USER_PROFILE_KEY);
-  }
-}
 
 // ─── History Storage ──────────────────────────────────────────────────────────
 const HISTORY_KEY = 'stitcho_history';

@@ -15,9 +15,6 @@ if linkage != nil
 end
 
 target 'stitcho' do
-  pod 'GoogleUtilities', :modular_headers => true
-  pod 'RecaptchaInterop', :modular_headers => true
-
   config = use_native_modules!
 
   use_react_native!(

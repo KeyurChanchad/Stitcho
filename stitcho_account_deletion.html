@@ -6,12 +6,12 @@
 <meta name="description" content="Stitcho account and data deletion page.">
 <title>Stitcho - Account & Data Deletion</title>
 <style>
-:root{--text:#222;--muted:#666;--border:#e5e5e5;--bg:#f7f7f9;--card:#fff;--accent:#4f46e5}
+:root{--text:#222;--muted:#666;--border:#e5e5e5;--bg:#f7f7f9;--card:#fff;--accent:#004C6D}
 *{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:var(--text);background:var(--bg);line-height:1.7}
 .container{max-width:900px;margin:40px auto;padding:0 20px}.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:40px;box-shadow:0 4px 18px rgba(0,0,0,.04)}
 h1{margin-top:0;font-size:34px;line-height:1.25}h2{margin-top:32px;padding-bottom:8px;border-bottom:1px solid var(--border);font-size:22px}
 .date{color:var(--muted);margin-bottom:30px}a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}ul{padding-left:24px}
-.notice{background:#f1f3ff;border-left:4px solid var(--accent);padding:16px 18px;margin:22px 0;border-radius:6px}
+.notice{background:#e6f7ff;border-left:4px solid var(--accent);padding:16px 18px;margin:22px 0;border-radius:6px}
 .steps{counter-reset:step;list-style:none;padding:0}.steps li{counter-increment:step;margin:14px 0;padding:14px 16px 14px 52px;border:1px solid var(--border);border-radius:8px;position:relative;background:#fff}
 .steps li::before{content:counter(step);position:absolute;left:16px;top:14px;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:var(--accent);color:#fff;font-weight:600}
 .contact{background:#fafafa;border:1px solid var(--border);padding:20px;border-radius:8px}footer{text-align:center;color:var(--muted);font-size:14px;padding:24px 0}
@@ -21,49 +21,42 @@ h1{margin-top:0;font-size:34px;line-height:1.25}h2{margin-top:32px;padding-botto
 <body>
 <main class="container"><article class="card">
 <h1>Stitcho – Account &amp; Data Deletion</h1>
-<div class="date"><strong>Last Updated:</strong> September 16, 2026</div>
+<div class="date"><strong>Last Updated:</strong> September 17, 2026</div>
 
-<p>Stitcho uses Google Sign-In to authenticate users and provide access to the application. Stitcho does <strong>not</strong> operate a backend server or maintain a database of Stitcho user accounts.</p>
-<p>Information associated with your Stitcho sign-in session and your embroidery calculation data are stored locally on your device.</p>
+<p>Stitcho is designed as a privacy-first, offline-capable embroidery design calculation tool. <strong>Stitcho does not require user accounts, does not use Google Sign-In, and does not operate any backend server or database.</strong></p>
 
-<div class="notice"><strong>Important:</strong> Deleting your Stitcho account/data does not delete your Google Account. Your Google Account is managed independently by Google.</div>
+<div class="notice">
+<strong>Summary:</strong> Because Stitcho does not maintain user accounts or store personal data on any server, there is no remote account or profile to delete. All application data is stored 100% locally on your device.
+</div>
 
-<h2>What Happens When You Delete Your Stitcho Account?</h2>
-<p>When you delete your Stitcho account/data, Stitcho data stored locally on your device is removed. This includes, where applicable:</p>
-<ul><li>Google Sign-In information stored by Stitcho</li><li>Local user/session information</li><li>Embroidery calculation history</li><li>Saved calculation inputs and results</li><li>Local application preferences and settings</li></ul>
-<p>Stitcho does not maintain a server-side database containing this information.</p>
+<h2>What Data Is Stored?</h2>
+<p>All data created while using Stitcho is saved strictly in local storage on your physical device. This includes:</p>
+<ul>
+  <li>Saved embroidery design calculation entries and history</li>
+  <li>Custom section inputs, stitch numbers, and rates</li>
+  <li>Local application state and preferences</li>
+</ul>
+<p>None of this information is ever uploaded to, transmitted to, or stored on external servers.</p>
 
-<h2>How to Delete Your Stitcho Data</h2>
+<h2>How to Delete Your Data</h2>
+<p>Since all data exists solely on your device, you have complete control over deleting it at any time:</p>
 <ol class="steps">
-<li><strong>From the Stitcho app:</strong> Use the <strong>Delete Account / Delete My Data</strong> option, if available. The app will remove Stitcho data stored locally on your device and sign you out.</li>
-<li><strong>From Android settings:</strong> Clear Stitcho's application data through your device's app settings. This removes locally stored Stitcho application data.</li>
-<li><strong>Uninstall Stitcho:</strong> Uninstalling the application may remove Stitcho's locally stored application data from your device.</li>
+  <li><strong>From inside the Stitcho app:</strong> Open the History modal and delete individual records using the delete action, or clear current form values with the "Clear All" button.</li>
+  <li><strong>Via Device Settings:</strong> Go to your device's <em>Settings &gt; Apps &gt; Stitcho &gt; Storage</em>, and tap <strong>Clear Data</strong> or <strong>Clear Storage</strong>. This completely wipes all locally stored history and preferences.</li>
+  <li><strong>Uninstall Stitcho:</strong> Uninstalling the application immediately removes the application and all associated local data from your device.</li>
 </ol>
 
-<h2>Request Deletion by Email</h2>
-<p>If you believe Stitcho may have information associated with you that is not stored locally on your device, you can submit a deletion request by contacting us.</p>
-<p>Please include the email address associated with your Stitcho Google Sign-In account so that we can identify the relevant request.</p>
-<div class="contact"><p><strong>App Name:</strong> Stitcho</p><p><strong>Developer:</strong> [Your Name / Company Name]</p><p><strong>Support Email:</strong> [Your Support Email Address]</p></div>
-<p>We will review the request and delete any Stitcho-controlled personal information that we may have, subject to applicable legal requirements.</p>
-
-<h2>No Server-Side Calculation History</h2>
-<p>Stitcho does not upload or store your embroidery calculation history on our own servers. Calculation inputs, results, and history are stored locally on your device.</p>
-<p>Therefore, there is no server-side calculation history maintained in a Stitcho database that needs to be deleted.</p>
-
-<h2>Google Sign-In</h2>
-<p>Stitcho uses Google Sign-In as its authentication provider. Stitcho does not delete or modify your Google Account when you delete your Stitcho data.</p>
-<p>Google may independently retain or process information associated with your Google Account according to Google's policies.</p>
-<p><a href="https://myaccount.google.com/" target="_blank" rel="noopener noreferrer">Manage your Google Account</a></p>
-<p><a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google Privacy Policy</a></p>
-
-<h2>Google AdMob</h2>
-<p>Stitcho uses Google AdMob to display advertisements. Google may independently process advertising-related information according to Google's policies and applicable consent requirements.</p>
-<p>Deleting Stitcho's locally stored data does not delete information that Google may have independently processed through its advertising services.</p>
-<p><a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Learn more about Google's privacy practices</a></p>
+<h2>No Third-Party Advertising or Tracking</h2>
+<p>Stitcho does not integrate Google AdMob or any third-party advertising SDKs. No personal information or identifiers are collected or shared for advertising purposes.</p>
 
 <h2>Contact Us</h2>
-<div class="contact"><p><strong>Stitcho</strong></p><p><strong>Developer:</strong> Keyur Chanchad</p><p><strong>Email:</strong> chanchadkeyur2001@gmail.com</p></div>
-<p><strong>Last Updated:</strong> September 16, 2026</p>
-</article><footer>&copy; 2026 Stitcho. All rights reserved.</footer></main>
+<p>If you have any questions regarding data privacy or deletion in Stitcho, feel free to contact us:</p>
+<div class="contact">
+  <p><strong>App Name:</strong> Stitcho</p>
+  <p><strong>Developer:</strong> Keyur Chanchad (Apex Infocom)</p>
+  <p><strong>Email:</strong> chanchadkeyur2001@gmail.com</p>
+</div>
+<p><strong>Last Updated:</strong> September 17, 2026</p>
+</article><footer>&copy; 2026 Stitcho • Apex Infocom. All rights reserved.</footer></main>
 </body>
 </html>

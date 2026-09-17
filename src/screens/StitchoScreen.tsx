@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
-  Image,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -24,7 +23,6 @@ import {
   SECTIONS,
   SECTION_LABELS,
   SectionValues,
-  UserProfile,
 } from '../types';
 
 // Services
@@ -36,30 +34,18 @@ import {
 } from '../services/calculation';
 import {
   loadHistory,
-  loadUserProfile,
   persistHistory,
-  persistUserProfile,
 } from '../services/storage';
-import {
-  checkSilentSignIn,
-  initGoogleSignIn,
-  signInWithGoogle,
-  signOutGoogle,
-} from '../services/auth';
 import { generateAndSharePDF } from '../services/pdf';
 import { checkForUpdate, openAppStore, UpdateInfo } from '../services/update';
 import { showToast } from '../services/toast';
-import { initAds, showInterstitialIfNeeded } from '../services/ads';
 
 // Components & Sub-screens
 import GridRow from '../components/GridRow';
 import SummaryRow from '../components/SummaryRow';
 import HistoryModal from '../components/HistoryModal';
-import ProfileModal from '../components/ProfileModal';
+import AboutModal from '../components/AboutModal';
 import UpdateModal from '../components/UpdateModal';
-import BannerAdView from '../components/BannerAdView';
-import SplashScreen from './SplashScreen';
-import LoginScreen from './LoginScreen';
 
 // Theme
 import {
@@ -79,16 +65,11 @@ export default function StitchoScreen() {
   const [historyVisible, setHistoryVisible] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [sharing, setSharing] = useState(false);
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [isAuthChecking, setIsAuthChecking] = useState(true);
-  const [profileVisible, setProfileVisible] = useState(false);
-  const [isSigningIn, setIsSigningIn] = useState(false);
+  const [aboutVisible, setAboutVisible] = useState(false);
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
   const [updateModalVisible, setUpdateModalVisible] = useState(false);
 
   useEffect(() => {
-    initGoogleSignIn();
-    initAds();
     setHistory(loadHistory());
 
     // Check for app updates in the background on launch
@@ -98,23 +79,6 @@ export default function StitchoScreen() {
         setUpdateModalVisible(true);
       }
     });
-
-    const savedUser = loadUserProfile();
-    if (savedUser) {
-      setUser(savedUser);
-      setIsAuthChecking(false);
-    } else {
-      checkSilentSignIn()
-        .then(silentUser => {
-          if (silentUser) {
-            setUser(silentUser);
-            persistUserProfile(silentUser);
-          }
-        })
-        .finally(() => {
-          setIsAuthChecking(false);
-        });
-    }
   }, []);
 
   const computed = compute(form);
@@ -178,8 +142,6 @@ export default function StitchoScreen() {
       showToast('success', 'Saved', 'Record saved to history.');
     }
     
-    // Show Ad if needed after save
-    showInterstitialIfNeeded();
   }, [form, computed, history, editingId]);
 
   const handleClear = useCallback(() => {
@@ -200,40 +162,6 @@ export default function StitchoScreen() {
       setSharing(false);
     }
   }, [form, computed]);
-
-  const handleGoogleSignIn = useCallback(async () => {
-    setIsSigningIn(true);
-    try {
-      const res = await signInWithGoogle();
-      if (res.type === 'success') {
-        setUser(res.user);
-        persistUserProfile(res.user);
-        showToast('success', 'Signed In', `Welcome, ${res.user.name || res.user.email}!`);
-      } else if (res.type === 'error') {
-        console.log(res);
-        showToast('error', 'Sign In Error', res.message);
-      }
-    } finally {
-      setIsSigningIn(false);
-    }
-  }, []);
-
-  const handleGoogleSignOut = useCallback(() => {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Sign Out',
-        style: 'destructive',
-        onPress: async () => {
-          await signOutGoogle();
-          setProfileVisible(false);
-          setUser(null);
-          persistUserProfile(null);
-          showToast('success', 'Signed Out', 'You have been signed out.');
-        },
-      },
-    ]);
-  }, []);
 
   const selectHistory = useCallback((entry: HistoryEntry) => {
     setForm(normalizeFormState(entry.form));
@@ -265,25 +193,13 @@ export default function StitchoScreen() {
   const handleManualUpdateCheck = useCallback(async () => {
     const info = await checkForUpdate();
     if (info && info.updateAvailable) {
-      setProfileVisible(false);
+      setAboutVisible(false);
       setUpdateInfo(info);
       setUpdateModalVisible(true);
     } else {
       showToast('info', 'Up to Date', 'You are already using the latest version of Stitcho.');
     }
   }, []);
-
-  // Splash Screen while verifying auth
-  if (isAuthChecking) {
-    return <SplashScreen />;
-  }
-
-  // Mandatory Login Gate
-  if (!user) {
-    return (
-      <LoginScreen onSignIn={handleGoogleSignIn} isSigningIn={isSigningIn} />
-    );
-  }
 
   return (
     <View style={[S.root, { paddingTop: insets.top }]}>
@@ -300,14 +216,12 @@ export default function StitchoScreen() {
           />
           <View>
             <Text style={S.headerTitle}>Stitcho Art Costing</Text>
-            {editingId ? (
+            {editingId && (
               <View style={S.editingChipRow}>
                 <Icon name="edit" size={11} color={Colors.primary} />
                 <Text style={S.editingChip}> Editing saved record</Text>
               </View>
-            ) : user.name ? (
-              <Text style={S.userGreeting}>Hi, {user.name.split(' ')[0]}</Text>
-            ) : null}
+            )}
           </View>
         </View>
 
@@ -322,17 +236,11 @@ export default function StitchoScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={S.profileHeaderBtn}
-            onPress={() => setProfileVisible(true)}
+            style={S.infoBtn}
+            onPress={() => setAboutVisible(true)}
             activeOpacity={0.8}
           >
-            {user.photo ? (
-              <Image source={{ uri: user.photo }} style={S.headerAvatar} />
-            ) : (
-              <View style={[S.headerAvatarFallback, S.headerAvatarActive]}>
-                <Icon name="person" size={20} color={Colors.dark} />
-              </View>
-            )}
+            <Icon name="info-outline" size={20} color={Colors.primary} />
           </TouchableOpacity>
         </View>
       </View>
@@ -346,37 +254,6 @@ export default function StitchoScreen() {
           contentContainerStyle={S.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
-          {/* ── Profile Status Banner ── */}
-          <TouchableOpacity
-            style={S.profileBanner}
-            onPress={() => setProfileVisible(true)}
-            activeOpacity={0.85}
-          >
-            <View style={S.profileBannerLeft}>
-              {user.photo ? (
-                <Image
-                  source={{ uri: user.photo }}
-                  style={S.profileBannerAvatar}
-                />
-              ) : (
-                <View style={S.profileBannerAvatarPlaceholder}>
-                  <Icon name="person" size={18} color={Colors.primary} />
-                </View>
-              )}
-              <View style={S.profileBannerTextWrap}>
-                <Text style={S.profileBannerName}>
-                  {user.name || 'Google User'}
-                </Text>
-                <Text style={S.profileBannerEmail} numberOfLines={1}>
-                  {user.email}
-                </Text>
-              </View>
-            </View>
-            <View style={S.profileBannerBadge}>
-              <Icon name="verified" size={13} color={Colors.accent} />
-              <Text style={S.profileBannerBadgeText}>Profile</Text>
-            </View>
-          </TouchableOpacity>
 
           {/* ── Design Name ── */}
           <View style={S.card}>
@@ -517,9 +394,6 @@ export default function StitchoScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Banner Ad anchored at bottom */}
-      <BannerAdView />
-
       {/* Modals */}
       <HistoryModal
         visible={historyVisible}
@@ -529,11 +403,9 @@ export default function StitchoScreen() {
         onDelete={deleteHistory}
       />
 
-      <ProfileModal
-        visible={profileVisible}
-        user={user}
-        onClose={() => setProfileVisible(false)}
-        onSignOut={handleGoogleSignOut}
+      <AboutModal
+        visible={aboutVisible}
+        onClose={() => setAboutVisible(false)}
         onCheckUpdate={handleManualUpdateCheck}
       />
 
@@ -577,12 +449,6 @@ const S = StyleSheet.create({
     fontSize: FontSize.xs,
     color: Colors.primary,
   },
-  userGreeting: {
-    fontFamily: FontFamily.medium,
-    fontSize: FontSize.xs,
-    color: Colors.primary,
-    marginTop: 2,
-  },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -603,7 +469,7 @@ const S = StyleSheet.create({
     fontSize: FontSize.sm,
     color: Colors.primary,
   },
-  profileHeaderBtn: {
+  infoBtn: {
     width: 32,
     height: 32,
     borderRadius: Radius.full,
@@ -611,86 +477,10 @@ const S = StyleSheet.create({
     borderColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
     backgroundColor: 'rgba(0,224,214,0.15)',
-  },
-  headerAvatar: {
-    width: '100%',
-    height: '100%',
-    borderRadius: Radius.full,
-  },
-  headerAvatarFallback: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerAvatarActive: {
-    backgroundColor: Colors.primary,
-    borderRadius: Radius.full,
-    width: 24,
-    height: 24,
   },
 
   scrollContent: { padding: Spacing[3], gap: Spacing[3] },
-
-  profileBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    padding: Spacing[3],
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    ...Shadow.sm,
-  },
-  profileBannerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  profileBannerAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: Radius.full,
-    marginRight: Spacing[3],
-    borderWidth: 1.5,
-    borderColor: Colors.primary,
-  },
-  profileBannerAvatarPlaceholder: {
-    width: 40,
-    height: 40,
-    borderRadius: Radius.full,
-    backgroundColor: Colors.computedBg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: Spacing[3],
-  },
-  profileBannerTextWrap: { flex: 1 },
-  profileBannerName: {
-    fontFamily: FontFamily.bold,
-    fontSize: FontSize.base,
-    color: Colors.textPrimary,
-  },
-  profileBannerEmail: {
-    fontFamily: FontFamily.regular,
-    fontSize: FontSize.xs,
-    color: Colors.textMuted,
-    marginTop: 1,
-  },
-  profileBannerBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.computedBg,
-    paddingHorizontal: Spacing[2] + 2,
-    paddingVertical: 4,
-    borderRadius: Radius.full,
-    gap: 4,
-  },
-  profileBannerBadgeText: {
-    fontFamily: FontFamily.semiBold,
-    fontSize: FontSize.xs,
-    color: Colors.accent,
-  },
 
   card: {
     backgroundColor: Colors.surface,

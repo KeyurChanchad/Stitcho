@@ -82,8 +82,8 @@ android {
         applicationId "com.apexinfocom.stitcho"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 3
-        versionName "1.0.2"
+        versionCode 4
+        versionName "1.0.4"
     }
     signingConfigs {
         debug {
@@ -125,5 +125,3 @@ dependencies {
         implementation jscFlavor
     }
 }
-
-apply plugin: "com.google.gms.google-services"
