@@ -1,42 +1,15 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {HistoryEntry} from '../types';
 import {compute, normalizeFormState} from './calculation';
 
-// ─── Local Storage shim ───────────────────────────────────────────────────────
-declare const global: {__stitchoStore?: string};
-
-function readStore(): Record<string, string> {
-  try {
-    if (global.__stitchoStore) {
-      return JSON.parse(global.__stitchoStore);
-    }
-  } catch {}
-  return {};
-}
-
-function writeStore(data: Record<string, string>) {
-  global.__stitchoStore = JSON.stringify(data);
-}
-
-export const Storage = {
-  getItem: (key: string): string | null => readStore()[key] ?? null,
-  setItem: (key: string, value: string) => {
-    const s = readStore();
-    s[key] = value;
-    writeStore(s);
-  },
-  removeItem: (key: string) => {
-    const s = readStore();
-    delete s[key];
-    writeStore(s);
-  },
-};
+export const Storage = AsyncStorage;
 
 // ─── History Storage ──────────────────────────────────────────────────────────
 const HISTORY_KEY = 'stitcho_history';
 
-export function loadHistory(): HistoryEntry[] {
+export async function loadHistory(): Promise<HistoryEntry[]> {
   try {
-    const r = Storage.getItem(HISTORY_KEY);
+    const r = await AsyncStorage.getItem(HISTORY_KEY);
     if (r) {
       const list = JSON.parse(r);
       return list.map((item: any) => {
@@ -48,10 +21,16 @@ export function loadHistory(): HistoryEntry[] {
         };
       });
     }
-  } catch {}
+  } catch (error) {
+    console.error('Error loading history from storage:', error);
+  }
   return [];
 }
 
-export function persistHistory(entries: HistoryEntry[]) {
-  Storage.setItem(HISTORY_KEY, JSON.stringify(entries));
+export async function persistHistory(entries: HistoryEntry[]): Promise<void> {
+  try {
+    await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(entries));
+  } catch (error) {
+    console.error('Error persisting history to storage:', error);
+  }
 }

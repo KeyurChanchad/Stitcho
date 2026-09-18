@@ -33,8 +33,10 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Stitcho needs access to your photo library to save and share design calculation reports and images.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Stitcho needs permission to save design calculation reports to your photo library.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

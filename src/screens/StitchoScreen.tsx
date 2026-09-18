@@ -70,7 +70,9 @@ export default function StitchoScreen() {
   const [updateModalVisible, setUpdateModalVisible] = useState(false);
 
   useEffect(() => {
-    setHistory(loadHistory());
+    loadHistory().then(loadedHistory => {
+      setHistory(loadedHistory);
+    });
 
     // Check for app updates in the background on launch
     checkForUpdate().then(info => {
